@@ -250,6 +250,7 @@ if (!function_exists('getLanguageCode')) {
             'sr-Latn-ME',
             'sr-Latn-RS',
             'sw-KE',
+            'sw-TZ',
             'tg-Cyrl-TJ',
             'th-TH',
             'tk-TM',
@@ -282,6 +283,75 @@ if (!function_exists('autoTranslator')) {
     {
         $res = file_get_contents("https://translate.googleapis.com/translate_a/single?client=gtx&ie=UTF-8&oe=UTF-8&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&dt=at&sl=" . $sl . "&tl=" . $tl . "&hl=hl&q=" . urlencode($q), $_SERVER['DOCUMENT_ROOT'] . "/transes.html");
         $res = json_decode($res);
-        return str_replace('_', ' ', $res[0][0][0]);
+        // Google splits the result into one segment per sentence.
+        return str_replace('_', ' ', implode('', array_map(fn ($segment) => $segment[0] ?? '', $res[0])));
+    }
+}
+
+if (!function_exists('translateTextOnline')) {
+    /**
+     * Machine-translates plain text. Returns null if the service can't be reached,
+     * so callers can fall back to the original text.
+     */
+    function translateTextOnline(string $text, string $targetLang, string $sourceLang = 'en'): ?string
+    {
+        try {
+            $response = \Illuminate\Support\Facades\Http::timeout(5)->get('https://translate.googleapis.com/translate_a/single', [
+                'client' => 'gtx', 'ie' => 'UTF-8', 'oe' => 'UTF-8', 'dt' => 't',
+                'sl' => $sourceLang, 'tl' => $targetLang, 'q' => $text,
+            ]);
+            $segments = $response->successful() ? ($response->json()[0] ?? null) : null;
+            if (!is_array($segments)) {
+                return null;
+            }
+            $translated = implode('', array_map(fn ($segment) => $segment[0] ?? '', $segments));
+            return $translated !== '' ? $translated : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+}
+
+if (!function_exists('autoTranslateContent')) {
+    /**
+     * Machine-translates shop content (a name, or rich-text HTML from the editor).
+     * For HTML only the text nodes are translated, so tags and attributes survive.
+     * Returns null when nothing could be translated.
+     */
+    function autoTranslateContent(?string $content, string $locale): ?string
+    {
+        $targetLang = getLanguageCode(country_code: $locale);
+        if ($targetLang == 'en' || trim(strip_tags((string)$content)) === '') {
+            return null;
+        }
+        if ($content === strip_tags($content)) {
+            return translateTextOnline($content, $targetLang);
+        }
+
+        $dom = new \DOMDocument();
+        $previous = libxml_use_internal_errors(true);
+        $dom->loadHTML('<?xml encoding="utf-8"?><div>' . $content . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        $textNodes = (new \DOMXPath($dom))->query('//text()[normalize-space()]');
+        if ($textNodes->length > 60) {
+            return null; // too long to translate while the admin waits on the save
+        }
+        foreach ($textNodes as $node) {
+            $translated = translateTextOnline(trim($node->nodeValue), $targetLang);
+            if ($translated === null) {
+                return null;
+            }
+            preg_match('/^\s*/u', $node->nodeValue, $leading);
+            preg_match('/\s*$/u', $node->nodeValue, $trailing);
+            $node->nodeValue = $leading[0] . $translated . $trailing[0];
+        }
+
+        $html = '';
+        foreach ($dom->documentElement->childNodes as $child) {
+            $html .= $dom->saveHTML($child);
+        }
+        return $html;
     }
 }
