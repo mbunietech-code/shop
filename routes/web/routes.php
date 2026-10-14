@@ -503,6 +503,7 @@ if (!$isGatewayPublished) {
         //AZAM PAY
         Route::group(['prefix' => 'azam-pay', 'as' => 'azam-pay.'], function () {
             Route::get('pay', [\App\Http\Controllers\Payment_Methods\AzamPayPaymentController::class, 'pay'])->name('pay');
+            Route::get('status', [\App\Http\Controllers\Payment_Methods\AzamPayPaymentController::class, 'status'])->name('status');
             Route::any('callback', [\App\Http\Controllers\Payment_Methods\AzamPayPaymentController::class, 'callback'])->name('callback')
                 ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
             Route::any('success', [\App\Http\Controllers\Payment_Methods\AzamPayPaymentController::class, 'success'])->name('success')
