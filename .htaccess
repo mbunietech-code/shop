@@ -6,6 +6,20 @@
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Security: the site is served from the project root, so app code,
+    # config, logs, keys and vendor files sit inside the web root.
+    # The front controller is the only PHP file allowed to run directly.
+    RewriteRule ^index\.php$ - [L]
+    RewriteRule \.(php[0-9]?|phtml|phar|pht|phps|inc)(/|$) - [F,NC]
+    # Hidden files (.env, .git, ...) are never served.
+    RewriteCond %{REQUEST_URI} !/\.well-known/
+    RewriteRule (^|/)\. - [F]
+    # Existing files are only served from the public asset folders.
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule !^((public|storage/app/public|resources/themes/[^/]+/public|\.well-known)(/.*)?|robots\.txt|sitemap\.xml|favicon\.ico|firebase-messaging-sw\.js|google[0-9a-f]+\.html)?$ - [F,NC]
+
     # Redirect Trailing Slashes If Not A Folder...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_URI} (.+)/$

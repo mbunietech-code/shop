@@ -9,6 +9,12 @@
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
+    # Security: the front controller is the only PHP file allowed to run.
+    # This folder has its own RewriteEngine, so the root rules don't apply here.
+    RewriteRule ^index\.php$ - [L]
+    RewriteRule \.(php[0-9]?|phtml|phar|pht|phps|inc)(/|$) - [F,NC]
+    RewriteRule (^|/)\. - [F]
+
     # Redirect Trailing Slashes If Not A Folder...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_URI} (.+)/$
