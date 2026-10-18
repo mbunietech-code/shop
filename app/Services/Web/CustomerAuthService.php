@@ -31,10 +31,11 @@ class CustomerAuthService
     public function sendCustomerPhoneVerificationToken($phone, $token): array
     {
         $response = SMSModule::sendCentralizedSMS($phone, $token);
+        $isSent = $response === 'success';
         return [
             'response' => $response,
-            'status' => 'success',
-            'message' => translate('please_check_your_SMS_for_OTP'),
+            'status' => $isSent ? 'success' : 'error',
+            'message' => $isSent ? translate('please_check_your_SMS_for_OTP') : translate('OTP_sending_failed'),
         ];
     }
 

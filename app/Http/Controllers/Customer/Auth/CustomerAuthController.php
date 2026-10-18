@@ -116,7 +116,7 @@ class CustomerAuthController extends Controller
                 $errorMsg = translate(ucfirst(strtolower($firebaseResponse['errors'])));
             }
         } else {
-            $response = $this->customerAuthService->sendCustomerPhoneVerificationToken($phoneNumber, $token);
+            $response = $this->customerAuthService->sendCustomerPhoneVerificationToken($phoneNumber, $token)['status'];
             if (env('APP_MODE') == 'dev') {
                 $response = 'success';
             }

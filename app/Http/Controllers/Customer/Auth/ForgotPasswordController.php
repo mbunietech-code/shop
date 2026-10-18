@@ -94,7 +94,7 @@ class ForgotPasswordController extends Controller
                     $smsErrorMsg = translate(strtolower($firebaseResponse['errors']));
                 }
             } else if ($verificationBy == 'phone') {
-                $response = $this->customerAuthService->sendCustomerPhoneVerificationToken($customer['phone'], $token);
+                $response = $this->customerAuthService->sendCustomerPhoneVerificationToken($customer['phone'], $token)['status'];
                 if (env('APP_MODE') == 'dev') {
                     $response = 'success';
                 }
@@ -172,7 +172,7 @@ class ForgotPasswordController extends Controller
                         $response = $firebaseResponse['status'];
                     }
                 } else {
-                    $response = $this->customerAuthService->sendCustomerPhoneVerificationToken($customer['phone'], $token);
+                    $response = $this->customerAuthService->sendCustomerPhoneVerificationToken($customer['phone'], $token)['response'];
                 }
 
                 $this->phoneOrEmailVerificationRepo->updateOrCreate(params: ['phone_or_email' => $customer['phone']], value: [

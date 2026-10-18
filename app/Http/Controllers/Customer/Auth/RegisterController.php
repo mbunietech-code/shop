@@ -118,7 +118,7 @@ class RegisterController extends Controller
             $token = $response['sessionInfo'];
         } else if ($phoneVerification && !$user['is_phone_verified']) {
             $response = $this->customerAuthService->sendCustomerPhoneVerificationToken($user['phone'], $token);
-            Toastr::success($response['message']);
+            $response['status'] == 'success' ? Toastr::success($response['message']) : Toastr::error($response['message']);
         } else if ($emailVerification && !$user['is_email_verified']) {
             $response = $this->customerAuthService->sendCustomerEmailVerificationToken($user, $token);
             if ($response['status'] == 'error') {
