@@ -8,6 +8,17 @@ use Intervention\Image\Facades\Image;
 
 class ImageManager
 {
+    public static function safeUploadExtension(?string $format): string
+    {
+        // Only plain extensions; never one the web server could run as a script.
+        $format = strtolower(trim((string) $format, ". \t\n\r\0\x0B"));
+        if (!preg_match('/^[a-z0-9]{1,10}$/', $format) || preg_match('/^(php\d*|phtml?|phar|pht|phps|inc|cgi|pl|py|sh|bash|asp|aspx|jsp|shtml?|htaccess|htpasswd|ini)$/', $format)) {
+            abort(422, 'This file type is not allowed.');
+        }
+
+        return $format;
+    }
+
     public static function upload(string $dir, string $format, $image, $file_type = 'image'): string
     {
         $storage = config('filesystems.disks.default') ?? 'public';
@@ -15,9 +26,6 @@ class ImageManager
             if (!Storage::disk($storage)->exists($dir)) {
                 Storage::disk($storage)->makeDirectory($dir);
             }
-
-            $imageName = Carbon::now()->toDateString() . "-" . uniqid() . "." . $image->getClientOriginalExtension();
-            Storage::disk($storage)->put($dir . $imageName, file_get_contents($image));
 
             if (in_array($image->getClientOriginalExtension(), ['gif', 'svg'])) {
                 $imageName = Carbon::now()->toDateString() . "-" . uniqid() . "." . $image->getClientOriginalExtension();
@@ -41,6 +49,7 @@ class ImageManager
     {
         $storage = config('filesystems.disks.default') ?? 'public';
         if ($file != null) {
+            $format = self::safeUploadExtension($format);
             $fileName = Carbon::now()->toDateString() . "-" . uniqid() . "." . $format;
             if (!Storage::disk($storage)->exists($dir)) {
                 Storage::disk($storage)->makeDirectory($dir);

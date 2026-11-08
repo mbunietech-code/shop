@@ -11,7 +11,7 @@
     # config, logs, keys and vendor files sit inside the web root.
     # The front controller is the only PHP file allowed to run directly.
     RewriteRule ^index\.php$ - [L]
-    RewriteRule \.(php[0-9]?|phtml|phar|pht|phps|inc)(/|$) - [F,NC]
+    RewriteRule \.(php[0-9]*|phtml|phar|pht|phps|inc)(/|$) - [F,NC]
     # Hidden files (.env, .git, ...) are never served.
     RewriteCond %{REQUEST_URI} !/\.well-known/
     RewriteRule (^|/)\. - [F]
