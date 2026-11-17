@@ -70,7 +70,10 @@ class RegisterController extends BaseController
 
     public function add(VendorAddRequest $request): JsonResponse
     {
-        $vendor = $this->vendorRepo->add(data: $this->vendorService->getAddData($request));
+        $vendorData = $this->vendorService->getAddData($request);
+        // Public self-registration must always wait for admin approval; never trust a client-sent status.
+        $vendorData['status'] = 'pending';
+        $vendor = $this->vendorRepo->add(data: $vendorData);
         $this->shopRepo->add($this->shopService->getAddShopDataForRegistration(request: $request, vendorId: $vendor['id']));
         $this->vendorWalletRepo->add($this->vendorService->getInitialWalletData(vendorId: $vendor['id']));
 
