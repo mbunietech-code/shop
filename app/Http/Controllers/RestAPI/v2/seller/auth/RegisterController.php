@@ -41,7 +41,8 @@ class RegisterController extends Controller
             $seller->email = $request->email;
             $seller->image = ImageManager::upload('seller/', 'webp', $request->file('image'));
             $seller->password = bcrypt($request->password);
-            $seller->status =  $request->status == 'approved'?'approved': "pending";
+            // App self-registration must always wait for admin approval; never trust a client-sent status.
+            $seller->status = 'pending';
             $seller->save();
 
             $shop = new Shop();
